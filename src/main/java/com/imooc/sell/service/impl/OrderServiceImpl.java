@@ -3,7 +3,10 @@ package com.imooc.sell.service.impl;
 import com.imooc.sell.dataobject.OrderDetail;
 import com.imooc.sell.dataobject.OrderMaster;
 import com.imooc.sell.dataobject.ProductInfo;
+import com.imooc.sell.dto.CartDTO;
 import com.imooc.sell.dto.OrderDTO;
+import com.imooc.sell.enums.OrderStatusEnum;
+import com.imooc.sell.enums.PayStatusEnum;
 import com.imooc.sell.enums.ResultEnum;
 import com.imooc.sell.exception.SellException;
 import com.imooc.sell.repository.OrderDetailRepository;
@@ -16,9 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -33,6 +39,7 @@ public class OrderServiceImpl implements OrderService {
     private OrderMasterRepository orderMasterRepository;
 
     @Override
+    @Transactional
     public OrderDTO create(OrderDTO orderDTO) {
 
         String orderId = KeyUtil.genUniqueKey();
@@ -42,7 +49,6 @@ public class OrderServiceImpl implements OrderService {
         for (OrderDetail orderDetail : orderDTO.getOrderDetailList()) {
             ProductInfo productInfo = productService.findOne(orderDetail.getProductId());
 
-            // 如果传入的
             if (productInfo == null) {
                 throw new SellException(ResultEnum.PRODUCT_NOT_EXIST);
             }
@@ -64,14 +70,26 @@ public class OrderServiceImpl implements OrderService {
 
         // 3. 写入订单数据库（ orderMaster and orderDetail ）
         OrderMaster orderMaster = new OrderMaster();
+        // 注意，先拷贝属性，避免值被属性默认值覆盖
+        BeanUtils.copyProperties(orderDTO, orderMaster);
         orderMaster.setOrderId(orderId);
         orderMaster.setOrderAmount(orderAmount);
-        BeanUtils.copyProperties(orderDTO, orderMaster);
+        orderMaster.setOrderStatus(OrderStatusEnum.NEW.getCode());
+        orderMaster.setPayStatus(PayStatusEnum.WAIT.getCode());
         orderMasterRepository.save(orderMaster);
 
         // 4. 扣除库存
+        // 在大并发量的时候，由于多线程，会造成可能的超卖现象
+        // 后面将会通过 redis 的锁的机制来避免这个问题
+        List<CartDTO> cartDTOList = orderDTO
+            .getOrderDetailList()
+            .stream()
+            .map(e -> new CartDTO(e.getProductId(), e.getProductQuantity()))
+            .collect(Collectors.toList());
 
-        return null;
+        productService.decreaseStock(cartDTOList);
+
+        return orderDTO;
     }
 
     @Override

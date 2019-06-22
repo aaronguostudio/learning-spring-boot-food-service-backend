@@ -1,11 +1,8 @@
 package com.imooc.sell.dto;
 
 import com.imooc.sell.dataobject.OrderDetail;
-import com.imooc.sell.enums.OrderStatusEnum;
-import com.imooc.sell.enums.PayStatusEnum;
 import lombok.Data;
 
-import javax.persistence.Id;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
