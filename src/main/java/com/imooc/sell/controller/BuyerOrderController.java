@@ -5,6 +5,7 @@ import com.imooc.sell.dto.OrderDTO;
 import com.imooc.sell.enums.ResultEnum;
 import com.imooc.sell.exception.SellException;
 import com.imooc.sell.form.OrderForm;
+import com.imooc.sell.service.BuyerService;
 import com.imooc.sell.service.OrderService;
 import com.imooc.sell.utils.ResultViewObjectUtil;
 import com.imooc.sell.viewobject.ResultViewObject;
@@ -12,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
@@ -27,6 +27,9 @@ import java.util.Map;
 @RequestMapping("/buyer/order")
 @Slf4j
 public class BuyerOrderController {
+
+    @Autowired
+    private BuyerService buyerService;
 
     @Autowired
     private OrderService orderService;
@@ -80,6 +83,23 @@ public class BuyerOrderController {
 
 
     // 订单详情
+    @GetMapping("/detail")
+    public ResultViewObject<OrderDTO> detail (
+            @RequestParam("openid") String openid,
+            @RequestParam("orderId") String orderId
+    ) {
+        OrderDTO orderDTO = buyerService.findOrderOne(openid, orderId);
+        return ResultViewObjectUtil.success(orderDTO);
+    }
+
 
     // 取消订单
+    @PostMapping("/cancel")
+    public ResultViewObject cancel (
+        @RequestParam("openid") String openid,
+        @RequestParam("orderId") String orderId
+    ) {
+        buyerService.cancelOrder(openid,orderId);
+        return ResultViewObjectUtil.success();
+    }
 }
