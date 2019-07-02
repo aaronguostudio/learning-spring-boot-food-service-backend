@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+// This controller is only for practice purpose
+
 @Slf4j
 @RestController
 @RequestMapping("/weixin")

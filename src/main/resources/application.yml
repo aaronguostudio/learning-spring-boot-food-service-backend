@@ -18,3 +18,7 @@ spring:
 server:
   servlet:
     context-path: /sell
+
+wechat:
+  mpAppId: fake
+  mpAppSecret: fake
